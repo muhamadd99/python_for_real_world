@@ -16,7 +16,7 @@ def main():
 			ingest_all_mhtml("data/0_source", "data/1_bronze")
 		case "process":
 			process_all_html("data/1_bronze", "data/2_silver")
-		case "loaded":
+		case "load":
 			load_all_jsons("data/2_silver", "data/3_gold")
 		case "profile":
 			run_data_profile("data/3_gold/jobs.db")
