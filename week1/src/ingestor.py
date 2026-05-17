@@ -1,5 +1,4 @@
 import email
-import quopri
 from pathlib import Path
 
 RESET = "\033[0m"

@@ -36,7 +36,7 @@ def load_all_jsons(input_dir, output_dir):
     print("🥇 Gold: ...")
 
     for file_path in json_files:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
         try:

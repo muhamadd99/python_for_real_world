@@ -38,7 +38,7 @@ def process_single_file(file_path: Path, output_path: Path):
 		soup = BeautifulSoup(f, "html.parser") #object of beautiful soup class
 	try:
 		# Find URL tag and take the last one
-		url_tag = soup.find("meta", property="og:url")
+		url_tag = soup.find("meta", property="og:url") # stop when finding the first occurrence
 		url_content = url_tag.get("content") if url_tag else None
 		if not url_content:
 			raise ValueError("source_id")
