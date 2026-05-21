@@ -1,0 +1,10 @@
+week1/.venv
+week1/data/
+week1/src/__pycache__/
+week1/.ruff_cache/
+
+week_2/.venv
+week_2/data/
+week_2/src/__pycache__/
+week_2/.ruff_cache/
+week_2/.env
