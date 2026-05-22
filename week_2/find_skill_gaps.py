@@ -28,6 +28,7 @@ def find_skill_gaps(input_file_path: str, db_url: str) -> SkillGapResult:
 
     # 1. Gracefully handle file-reading or missing file errors
     if not os.path.exists(input_file_path):
+        print(f"gaps=[] time=0 tokens=0 reason=No input file exists")
         return SkillGapResult(gaps=[])
 
     try:

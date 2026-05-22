@@ -40,7 +40,7 @@ def tag_data(db_url: str):
         return
 
     # 1. Gather rows missing an updated tech_stack values
-    cursor.execute("SELECT source_id, description FROM jobs WHERE tech_stack IS NULL OR tech_stack = '' LIMIT 12;")
+    cursor.execute("SELECT source_id, description FROM jobs WHERE tech_stack IS NULL OR tech_stack = '';")
     unprocessed_rows = cursor.fetchall()
 
     if not unprocessed_rows:

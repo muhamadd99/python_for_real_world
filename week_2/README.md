@@ -214,7 +214,7 @@ See rate_limits.txt for details.
    - Verify all gaps are in lowercase
 
 4. **Batch Processing**
-   - Run tag_data with 12+ untagged jobs
+   - Run tag_data with untagged jobs
    - Verify batches process in groups of 3
    - Verify retry logic triggers on API rate limit
 
@@ -288,7 +288,3 @@ Educational project for K-youth programme.
 ```
 
 ---
-
-Just copy and paste this into your `README.md` file! All the commands use `uv sync` and `uv run`. 🎉---
-
-Just copy and paste this into your `README.md` file! All the commands use `uv sync` and `uv run`. 🎉
