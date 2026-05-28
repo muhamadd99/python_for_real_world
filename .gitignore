@@ -8,3 +8,9 @@ week_2/data/
 week_2/src/__pycache__/
 week_2/.ruff_cache/
 week_2/.env
+
+week_3/.venv
+week_3/data/
+week_3/src/__pycache__/
+week_3/.ruff_cache/
+week_3/.env
