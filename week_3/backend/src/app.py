@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -11,10 +12,13 @@ sys.path.insert(0, parent_dir)
 
 # Import your week 2 function
 from week_2.prompt_model import prompt_model
+from week_2.find_skill_gaps import find_skill_gaps
 
 load_dotenv()
 
 app = FastAPI()
+
+db_path = os.path.join(app_dir, "week_2", "data", "resources", "jobs_d1.db")
 
 @app.post("/chat")
 async def chat(request: Request):
@@ -25,14 +29,25 @@ async def chat(request: Request):
         message = data.get("message", "")
         pdf_text = data.get("pdf_text", "")
         
-        # If PDF text exists, merge it cleanly into the prompt context structure
         if pdf_text:
-            full_prompt = f"Resume Content:\n{pdf_text}\n\nUser Question:\n{message}"
+            temp_path = None
+            try:
+                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as temp_file:
+                    temp_file.write(pdf_text)
+                    temp_path = temp_file.name
+
+                skill_gap_result = find_skill_gaps(temp_path, db_path)
+                gaps = skill_gap_result.gaps
+                if gaps:
+                    response_text = "Skill gaps: " + ", ".join(gaps)
+                else:
+                    response_text = "Skill gaps: none detected in the resume."
+            finally:
+                if temp_path and os.path.exists(temp_path):
+                    os.remove(temp_path)
         else:
-            full_prompt = message
-        
-        # Trigger your actual AI model pipeline execution from last week
-        response_text = prompt_model("flash", full_prompt)
+            # Fallback to general chat if no resume text is provided
+            response_text = prompt_model("flash", message)
         
         # Respond back with the structured answer the frontend expects
         return JSONResponse(content={"reply": response_text})
