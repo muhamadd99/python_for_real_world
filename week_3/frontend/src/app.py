@@ -16,7 +16,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 templates_dir = os.path.join(current_dir, "templates")
 templates = Jinja2Templates(directory=templates_dir) #templates is jinja2 object
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+# BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = os.getenv("BACKEND_URL")
+if not BACKEND_URL:
+    raise ValueError("BACKEND_URL environment variable is required")
 
 @app.get("/", response_class=HTMLResponse) #make sure it return as HTTP header
 def read_root(req: Request): #req is variable name, Request is data type
@@ -48,7 +51,7 @@ async def handle_message(message: str = Form(""), file: UploadFile = File(None))
 
     # 3. Forward the payload to the Backend URL safely from the server side
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(f"{BACKEND_URL}/chat", json=payload)
             backend_data = response.json()
             return JSONResponse(content=backend_data)

@@ -39,7 +39,11 @@ async def chat(request: Request):
                 skill_gap_result = find_skill_gaps(temp_path, db_path)
                 gaps = skill_gap_result.gaps
                 if gaps:
-                    response_text = "Skill gaps: " + ", ".join(gaps)
+                    response_text = (
+                        "We compared your resume to our job-skill database. "
+                        "To improve your employability, consider studying or practicing: "
+                        + ", ".join(gaps)
+                    )
                 else:
                     response_text = "Skill gaps: none detected in the resume."
             finally:
