@@ -4,11 +4,12 @@ This project builds and containerizes a full-stack chat application with a FastA
 ## Setup Instructions
 Prerequisites:
 - Docker and Docker Compose
--uv for manual local runs
+- uv for manual local runs
 
 Environment variables:
 - Create a .env file at the repo root with your settings.
-- Use the provided .env.example as a template.
+- Use the provided .env.example as a template (values are placeholders).
+- BACKEND_URL is required for the frontend to start.
 
 Example .env for Docker Compose:
 ```
@@ -35,6 +36,7 @@ Expected inputs:
 
 Expected output:
 - A chatbot response rendered in the chat history
+- if resume PDF was given, skills gap list to improve the resume were produced
 
 ## API / Function Reference
 Backend endpoint:
