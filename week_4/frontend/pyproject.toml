@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools==70.3.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autosport-pay-frontend"
+version = "0.1.0"
+description = "Frontend microservice for AutoSport-Pay"
+requires-python = ">=3.14"
+dependencies = [
+  "fastapi==0.111.0",
+  "uvicorn==0.30.1",
+  "httpx==0.27.0",
+  "python-multipart==0.0.9",
+  "python-dotenv==1.0.1"
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.setuptools]
+packages = ["src"]

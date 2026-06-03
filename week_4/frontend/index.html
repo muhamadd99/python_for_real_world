@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoSport-Pay Receipt Uploader</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AutoSport-Pay</p>
+          <h1>Instant receipt checks for your sports crew.</h1>
+          <p class="lead">
+            Upload a bank transfer receipt and get a validated status in seconds. Works with
+            images and PDFs.
+          </p>
+          <div class="stats">
+            <div>
+              <span class="stat-value">3</span>
+              <span class="stat-label">validation tiers</span>
+            </div>
+            <div>
+              <span class="stat-value">1</span>
+              <span class="stat-label">simple upload</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-card">
+          <form id="receipt-form" class="upload-card">
+            <label class="file-drop" for="receipt-file">
+              <input id="receipt-file" name="file" type="file" accept="image/*,.pdf" />
+              <div>
+                <h3>Drop receipt here</h3>
+                <p>or click to upload (PNG, JPG, PDF)</p>
+              </div>
+            </label>
+            <label class="input-row">
+              <span>Sender label</span>
+              <input id="sender" name="sender" type="text" placeholder="e.g., Mad Kawan Bola" />
+            </label>
+            <button type="submit" class="primary">Validate receipt</button>
+          </form>
+          <div id="result" class="result hidden">
+            <h4>Status</h4>
+            <pre id="result-json"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

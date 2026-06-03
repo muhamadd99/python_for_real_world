@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  userbot:
+    build:
+      context: ./backend
+    command: ["python", "-m", "src.main"]
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/data:/app/data
+    stdin_open: true #for phone number
+    tty: true # for phone number
+    depends_on:
+      - backend
