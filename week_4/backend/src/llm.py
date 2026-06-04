@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import re
 import urllib.request
+from google import genai
+from google.genai.errors import APIError
 
 from .config import Config
 
@@ -12,19 +14,9 @@ SYSTEM_PROMPT = (
     "Parse OCR text from bank receipts and return strict JSON only."
 )
 
-
-def parse_receipt_text(text: str, config: Config) -> dict:
-    provider = config.llm_provider.lower()
-    if provider == "openai":
-        return _parse_with_openai(text, config)
-    if provider in {"gemini", "googlegenai", "google"}:
-        return _parse_with_gemini(text, config)
-    return _parse_with_mock(text)
-
-
-def _parse_with_mock(text: str) -> dict:
+def parse_receipt_text(text: str) -> dict:
     bank_name = _find_bank_name(text)
-    payer_name = _find_payer_name(text)
+    receiver_name = _find_receiver_name(text)
     amount = _find_amount(text)
     reference_id = _find_reference_id(text)
     date = _find_date(text)
@@ -49,7 +41,7 @@ def _parse_with_mock(text: str) -> dict:
 
     return {
         "bank_name": bank_name,
-        "payer_name": payer_name,
+        "receiver_name": receiver_name,
         "amount": amount,
         "currency": _find_currency(text),
         "reference_id": reference_id,
@@ -59,72 +51,6 @@ def _parse_with_mock(text: str) -> dict:
         "reasons": reasons,
     }
 
-
-def _parse_with_openai(text: str, config: Config) -> dict:
-    if not config.llm_api_key:
-        raise RuntimeError("LLM_API_KEY is required for OpenAI provider")
-
-    payload = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": text},
-        ],
-        "temperature": 0,
-    }
-    data = json.dumps(payload).encode("utf-8")
-    request = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=data,
-        headers={
-            "Authorization": f"Bearer {config.llm_api_key}",
-            "Content-Type": "application/json",
-        },
-    )
-    with urllib.request.urlopen(request, timeout=60) as response:
-        body = json.loads(response.read().decode("utf-8"))
-
-    content = body["choices"][0]["message"]["content"]
-    return json.loads(content)
-
-
-def _parse_with_gemini(text: str, config: Config) -> dict:
-    if not config.llm_api_key:
-        raise RuntimeError("LLM_API_KEY is required for Gemini provider")
-
-    payload = {
-        "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-        "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": text}],
-            }
-        ],
-        "generationConfig": {"temperature": 0},
-    }
-    data = json.dumps(payload).encode("utf-8")
-    request = urllib.request.Request(
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        "gemini-1.5-flash:generateContent?key="
-        f"{config.llm_api_key}",
-        data=data,
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(request, timeout=60) as response:
-        body = json.loads(response.read().decode("utf-8"))
-
-    candidates = body.get("candidates", [])
-    if not candidates:
-        raise RuntimeError("Gemini response missing candidates")
-
-    parts = candidates[0].get("content", {}).get("parts", [])
-    if not parts:
-        raise RuntimeError("Gemini response missing content parts")
-
-    content = parts[0].get("text", "")
-    return json.loads(content)
-
-
 def _find_bank_name(text: str) -> str | None:
     candidates = ["maybank", "cimb", "duitnow", "public bank", "rhb", "hsbc"]
     lower = text.lower()
@@ -132,7 +58,6 @@ def _find_bank_name(text: str) -> str | None:
         if name in lower:
             return name.title()
     return None
-
 
 def _find_amount(text: str) -> str | None:
     match = re.search(r"(RM|MYR)\s?([0-9]+(?:\.[0-9]{2})?)", text, re.IGNORECASE)
@@ -146,7 +71,6 @@ def _find_currency(text: str) -> str | None:
         return "MYR"
     return None
 
-
 def _find_reference_id(text: str) -> str | None:
     patterns = [
         r"reference\s*(id|no\.?)\s*[:\s]*\s*([A-Za-z0-9\-]{6,})",
@@ -158,7 +82,6 @@ def _find_reference_id(text: str) -> str | None:
             return match.group(match.lastindex)
     return None
 
-
 def _find_date(text: str) -> str | None:
     match = re.search(r"(\d{2}[/-]\d{2}[/-]\d{4})", text)
     if match:
@@ -168,13 +91,145 @@ def _find_date(text: str) -> str | None:
         return f"{match.group(1)} {match.group(2).capitalize()} {match.group(3)}"
     return None
 
-
 def _find_time(text: str) -> str | None:
     match = re.search(r"(\d{2}:\d{2}(?::\d{2})?)", text)
     return match.group(1) if match else None
 
-def _find_payer_name(text: str) -> str | None:
+def _find_receiver_name(text: str):
     match = re.search(r"beneficiary\s*name\s*\n\s*(.+)", text, re.IGNORECASE)
     if match:
         return match.group(1).strip()
     return None
+
+def confirm_amount_with_ai(parsed: dict, raw_text: str, config: Config) -> dict:
+    """Use LLM to confirm the regex-extracted amount."""
+    if config.llm_provider.lower() == "mock":
+        parsed["amount_confirmed"] = None
+        return parsed
+
+    regex_amount = parsed.get("amount")
+    if not regex_amount:
+        return parsed  # nothing to confirm
+
+    result = _ask_llm_for_amount(regex_amount, raw_text, config)
+
+    if result is not None and result[0] == "yes":
+        parsed["amount_confirmed"] = True
+        parsed["amount_llm_value"] = regex_amount
+    else:
+        parsed["amount_confirmed"] = False
+        parsed["status"] = "FISHY"
+        parsed["reasons"] = list(parsed.get("reasons", []))
+
+        if result is None:
+            parsed["amount_llm_value"] = None
+            parsed["reasons"].append("amount_confirmation_failed: LLM returned no response")
+        else:
+            parsed["amount_llm_value"] = result[1] if len(result) > 1 else None
+            parsed["amount_regex"] = regex_amount
+            parsed["amount"] = result[1] if len(result) > 1 else parsed["amount"]
+            parsed["reasons"].append(
+                f"amount_mismatch: regex={regex_amount}, llm={parsed['amount_llm_value']}"
+            )
+
+    return parsed
+
+def _ask_llm_for_amount(regex_amount: str, raw_text: str, config: Config) -> list | None:
+    """Ask LLM to confirm the extracted amount. Returns a list like ['yes'] or ['no', '42.50']."""
+    prompt = (
+        "A receipt was parsed and the transaction amount was extracted as: "
+        f"{regex_amount}.\n\n"
+        "Review the receipt text below and confirm if this amount is correct.\n\n"
+        "Respond with a JSON list:\n"
+        '["yes"] if the amount is correct.\n'
+        '["no", "<correct_amount>"] if the amount is wrong, replacing <correct_amount> '
+        "with the correct amount.\n\n"
+        f"Receipt text:\n{raw_text}"
+    )
+
+    try:
+        response_text = _call_gemini(prompt, config)
+        if not response_text:
+            return None
+        return json.loads(response_text)
+    except (json.JSONDecodeError, Exception):
+        return None
+
+def _call_gemini(prompt: str, config: Config) -> str | None:
+    """Send a prompt to Gemini and return the raw text response."""
+    if not config.llm_api_key:
+        return None
+
+    try:
+        client = genai.Client(api_key=config.llm_api_key)
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt,
+        )
+        return response.text
+    except Exception:
+        return None
+    
+#   def _parse_with_openai(text: str, config: Config) -> dict:
+#     if not config.llm_api_key:
+#         raise RuntimeError("LLM_API_KEY is required for OpenAI provider")
+
+#     payload = {
+#         "model": "gpt-4o-mini",
+#         "messages": [
+#             {"role": "system", "content": SYSTEM_PROMPT},
+#             {"role": "user", "content": text},
+#         ],
+#         "temperature": 0,
+#     }
+#     data = json.dumps(payload).encode("utf-8")
+#     request = urllib.request.Request(
+#         "https://api.openai.com/v1/chat/completions",
+#         data=data,
+#         headers={
+#             "Authorization": f"Bearer {config.llm_api_key}",
+#             "Content-Type": "application/json",
+#         },
+#     )
+#     with urllib.request.urlopen(request, timeout=60) as response:
+#         body = json.loads(response.read().decode("utf-8"))
+
+#     content = body["choices"][0]["message"]["content"]
+#     return json.loads(content)
+
+
+# def _parse_with_gemini(text: str, config: Config) -> dict:
+#     if not config.llm_api_key:
+#         raise RuntimeError("LLM_API_KEY is required for Gemini provider")
+
+#     payload = {
+#         "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+#         "contents": [
+#             {
+#                 "role": "user",
+#                 "parts": [{"text": text}],
+#             }
+#         ],
+#         "generationConfig": {"temperature": 0},
+#     }
+#     data = json.dumps(payload).encode("utf-8")
+#     request = urllib.request.Request(
+#         "https://generativelanguage.googleapis.com/v1beta/models/"
+#         "gemini-1.5-flash:generateContent?key="
+#         f"{config.llm_api_key}",
+#         data=data,
+#         headers={"Content-Type": "application/json"},
+#     )
+#     with urllib.request.urlopen(request, timeout=60) as response:
+#         body = json.loads(response.read().decode("utf-8"))
+
+#     candidates = body.get("candidates", [])
+#     if not candidates:
+#         raise RuntimeError("Gemini response missing candidates")
+
+#     parts = candidates[0].get("content", {}).get("parts", [])
+#     if not parts:
+#         raise RuntimeError("Gemini response missing content parts")
+
+#     content = parts[0].get("text", "")
+#     return json.loads(content)

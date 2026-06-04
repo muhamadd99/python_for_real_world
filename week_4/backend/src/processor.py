@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from .config import Config
-from .llm import parse_receipt_text
+from .llm import parse_receipt_text, confirm_amount_with_ai
 from .ocr import ocr_image
 from .pdf_utils import extract_text_from_pdf
 from .storage import Storage
@@ -19,7 +19,8 @@ def process_receipt(file_path: str, sender: str, storage: Storage, config: Confi
 
     import sys #debug
     print(f"--- RAW OCR ---\n{raw_text}\n--- END ---", flush=True, file=sys.stderr) #debug
-    parsed = parse_receipt_text(raw_text, config)
+    parsed = parse_receipt_text(raw_text)
+    parsed = confirm_amount_with_ai(parsed, raw_text, config)
     parsed = validate_receipt(parsed, storage)
     if contact_name:
         parsed["contact_name"] = contact_name

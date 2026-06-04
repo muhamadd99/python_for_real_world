@@ -91,7 +91,14 @@ async def send_list(event, db_path: str) -> None:
         payer = contact_name or sender
         status = data.get("status")
         amount = data.get("amount")
-        lines.append(f"{payer} — {status} — RM{amount}")
+        amount_confirmed = data.get("amount_confirmed")
+        if amount_confirmed is True:
+            ai_status = "AI CONFIRMED"
+        elif amount_confirmed is False:
+            ai_status = f"AI OVERWRITE{{{data.get('amount_regex')}}}"
+        else:
+            ai_status = "NO AI CHECK"
+        lines.append(f"{payer} — {status} — RM{amount} — {ai_status}")
 
     await event.reply("\n".join(lines))
 
