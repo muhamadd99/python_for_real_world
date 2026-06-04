@@ -23,8 +23,8 @@ def main() -> None:
     storage = Storage(config.database_path)
     storage.init_schema()
 
-    def handler(file_path: str, sender: str) -> dict:
-        return process_receipt(file_path, sender, storage, config)
+    def handler(file_path: str, sender: str, contact_name: str = None) -> dict:
+        return process_receipt(file_path, sender, storage, config, contact_name)
 
     run_userbot(config, handler)
 

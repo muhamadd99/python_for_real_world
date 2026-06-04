@@ -24,6 +24,7 @@ def parse_receipt_text(text: str, config: Config) -> dict:
 
 def _parse_with_mock(text: str) -> dict:
     bank_name = _find_bank_name(text)
+    payer_name = _find_payer_name(text)
     amount = _find_amount(text)
     reference_id = _find_reference_id(text)
     date = _find_date(text)
@@ -31,13 +32,24 @@ def _parse_with_mock(text: str) -> dict:
 
     reasons = []
     status = "VALID"
-    if not amount or not reference_id or not date:
+    missing = []
+    if not amount:
+        missing.append("amount")
+    if not reference_id:
+        missing.append("reference_id")
+        
+    date_missing = not date
+
+    if missing:
         status = "INVALID"
-        reasons.append("missing_required_fields")
+        reasons.append(f"missing_required_fields: {', '.join(missing)}")
+    elif date_missing:
+        status = "OKLAH"
+        reasons.append("missing_optional_fields: transaction_date")
 
     return {
         "bank_name": bank_name,
-        "payer_name": None,
+        "payer_name": payer_name,
         "amount": amount,
         "currency": _find_currency(text),
         "reference_id": reference_id,
@@ -137,7 +149,7 @@ def _find_currency(text: str) -> str | None:
 
 def _find_reference_id(text: str) -> str | None:
     patterns = [
-        r"reference\s*(id|no)?[:\s]+([A-Za-z0-9\-]{6,})",
+        r"reference\s*(id|no\.?)\s*[:\s]*\s*([A-Za-z0-9\-]{6,})",
         r"ref\s*[:\s]+([A-Za-z0-9\-]{6,})",
     ]
     for pattern in patterns:
@@ -149,9 +161,20 @@ def _find_reference_id(text: str) -> str | None:
 
 def _find_date(text: str) -> str | None:
     match = re.search(r"(\d{2}[/-]\d{2}[/-]\d{4})", text)
-    return match.group(1) if match else None
+    if match:
+        return match.group(1)
+    match = re.search(r"\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[,\s]+(\d{4})\b", text, re.IGNORECASE) #maybank date format
+    if match:
+        return f"{match.group(1)} {match.group(2).capitalize()} {match.group(3)}"
+    return None
 
 
 def _find_time(text: str) -> str | None:
     match = re.search(r"(\d{2}:\d{2}(?::\d{2})?)", text)
     return match.group(1) if match else None
+
+def _find_payer_name(text: str) -> str | None:
+    match = re.search(r"beneficiary\s*name\s*\n\s*(.+)", text, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None

@@ -21,6 +21,7 @@ class Storage:
                 CREATE TABLE IF NOT EXISTS receipts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     sender TEXT,
+                    contact_name TEXT,
                     file_path TEXT,
                     raw_text TEXT,
                     parsed_json TEXT,
@@ -43,13 +44,14 @@ class Storage:
         parsed_json = json.dumps(parsed, ensure_ascii=True)
         reference_id = parsed.get("reference_id") if isinstance(parsed, dict) else None
         status = parsed.get("status") if isinstance(parsed, dict) else None
+        contact_name = parsed.get("contact_name")
         with self.connect() as conn:
             conn.execute(
                 """
-                INSERT INTO receipts (sender, file_path, raw_text, parsed_json, status, reference_id)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO receipts (sender, contact_name, file_path, raw_text, parsed_json, status, reference_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (sender, file_path, raw_text, parsed_json, status, reference_id),
+                (sender, contact_name, file_path, raw_text, parsed_json, status, reference_id),
             )
 
     def has_reference_id(self, reference_id: str) -> bool:

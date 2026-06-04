@@ -13,8 +13,23 @@ def validate_receipt(parsed: dict, storage: Storage) -> dict:
 
     if not reference_id or not amount or not date:
         status = "INVALID"
-        if "missing_required_fields" not in reasons:
-            reasons.append("missing_required_fields")
+        missing = []
+        if not reference_id:
+            missing.append("reference_id")
+        if not amount:
+            missing.append("amount")
+        
+        date_missing = not date
+        
+        if missing:
+            status = "INVALID"
+            reason = f"missing_required_fields: {', '.join(missing)}"
+            if reason not in reasons:
+                reasons.append(reason)
+        elif date_missing and status != "FISHY":
+            status = "OKLAH"
+            if "missing_optional_fields: transaction_date" not in reasons:
+                reasons.append("missing_optional_fields: transaction_date")
 
     if reference_id and storage.has_reference_id(reference_id):
         status = "FISHY"
