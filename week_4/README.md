@@ -88,7 +88,7 @@ The AI component must return strict JSON for downstream validation and storage:
 ```json
 {
   "bank_name": "string or null",
-  "ceceiver_name": "string or null",
+  "receiver_name": "string or null",
   "amount": "string or null",
   "currency": "string or null",
   "reference_id": "string or null",

@@ -13,3 +13,4 @@ Requires-Dist: uvicorn==0.30.1
 Requires-Dist: python-multipart==0.0.9
 Requires-Dist: python-dotenv==1.0.1
 Requires-Dist: pytest==8.2.2
+Requires-Dist: google-genai>=1.0.0

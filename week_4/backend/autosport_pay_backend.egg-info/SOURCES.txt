@@ -13,8 +13,10 @@ src/main.py
 src/ocr.py
 src/pdf_utils.py
 src/processor.py
+src/receipt_extractor_v2.py
 src/storage.py
 src/telegram_bot.py
+src/test_standalone.py
 src/validator.py
 tests/test_llm_mock.py
 tests/test_validator.py

@@ -1,7 +1,0 @@
-.venv/
-__pycache__/
-.ruff_cache/
-.env
-.env.*
-.python-version
-.git/
