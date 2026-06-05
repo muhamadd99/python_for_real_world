@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sqlite3
 import tempfile
 from typing import Callable
@@ -9,9 +10,14 @@ from telethon import TelegramClient, events
 from telethon.tl.functions.contacts import GetContactsRequest
 
 from .config import Config
+from .storage import Storage
+from .llm import parse_receipt_text
+from .ocr import ocr_image
+from .ocr_easy import ocr_image_easyocr
+from .pdf_utils import extract_text_from_pdf
 
 
-async def _run(config: Config, handler: Callable[[str, str], dict]) -> None:
+async def _run(config: Config, handler: Callable[[str, str], dict], storage: Storage) -> None:
     if not config.telegram_api_id or not config.telegram_api_hash or not config.telegram_session:
         raise RuntimeError("Telegram config missing. Set TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_SESSION")
 
@@ -32,8 +38,11 @@ async def _run(config: Config, handler: Callable[[str, str], dict]) -> None:
 
     @client.on(events.NewMessage(outgoing=True))
     async def on_outgoing(event) -> None:
-        if event.raw_text and event.raw_text.strip().lower() == "/list":
+        text = event.raw_text.strip() if event.raw_text else ""
+        if text.lower() == "/list":
             await send_list(event, config.database_path)
+        elif text.lower().startswith("/uploadtoreceiptdataset"):
+            await handle_upload_to_receipt_dataset(event, text, storage, config)
 
     print("Telegram userbot started. Waiting for receipts...")
     await client.start()
@@ -48,8 +57,8 @@ async def _run(config: Config, handler: Callable[[str, str], dict]) -> None:
     await client.run_until_disconnected()
 
 
-def run_userbot(config: Config, handler: Callable[[str, str], dict]) -> None:
-    asyncio.run(_run(config, handler))
+def run_userbot(config: Config, handler: Callable[[str, str], dict], storage: Storage) -> None:
+    asyncio.run(_run(config, handler, storage))
 
 async def process_receipt(event, handler: Callable[[str, str], dict], contact_map: dict,client) -> None:
     sender_id = str(event.sender_id)
@@ -101,5 +110,82 @@ async def send_list(event, db_path: str) -> None:
         lines.append(f"{payer} — {status} — RM{amount} — {ai_status}")
 
     await event.reply("\n".join(lines))
+
+async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, config: Config) -> None:
+    args = text[len("/uploadtoreceiptdataset"):].strip()
+
+    if event.message.media:
+        debug_dir = os.path.join(os.path.dirname(config.database_path), "pdf_converted_pic_debug")
+        os.makedirs(debug_dir, exist_ok=True)
+
+        file_path = await event.message.download_media(file=debug_dir)
+        if not file_path:
+            await event.reply("Failed to download file.")
+            return
+
+        ext = file_path.rsplit(".", 1)[-1].lower()
+        if ext == "pdf":
+            raw_text = extract_text_from_pdf(file_path, ocr_fn=ocr_image_easyocr, force_image=True)
+        else:
+            raw_text = ocr_image_easyocr(file_path)
+
+        print(f"--- RAW OCR (receipt_dataset) ---\n{raw_text}\n--- END ---")
+
+        receiver_keywords = storage.get_receiver_keywords()
+        parsed = parse_receipt_text(raw_text, receiver_keywords)
+
+        if not parsed.get("bank_name") and not parsed.get("reference_id"):
+            await event.reply(
+                "Could not extract enough fields from receipt.\n"
+                "Fallback: use manual format:\n"
+                "/uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|transaction_date|transaction_time|currency|currency_keyword"
+            )
+            return
+
+        storage.save_receipt_dataset(
+            bank_name=parsed.get("bank_name") or "",
+            receiver_name=parsed.get("receiver_name") or "",
+            receiver_keyword=parsed.get("receiver_keyword") or "",
+            ref_id=parsed.get("reference_id") or "",
+            transaction_date=parsed.get("transaction_date") or "",
+            transaction_time=parsed.get("transaction_time") or "",
+            currency=parsed.get("currency") or "",
+            currency_keyword="",
+        )
+        await event.reply(
+            f"Saved from receipt:\n"
+            f"Bank: {parsed.get('bank_name')}\n"
+            f"Receiver: {parsed.get('receiver_name')}\n"
+            f"Receiver keyword: {parsed.get('receiver_keyword') or 'not detected'}\n"
+            f"Ref: {parsed.get('reference_id')}\n"
+            f"Date: {parsed.get('transaction_date')}\n"
+            f"Time: {parsed.get('transaction_time')}\n"
+            f"Currency: {parsed.get('currency')}\n"
+            f"Currency keyword: {parsed.get('currency_keyword') or 'not detected'}"
+        )
+        return
+
+    fields = [f.strip() for f in args.split("|")]
+    if len(fields) != 8:
+        await event.reply(
+            "Usage:\n"
+            "1. Attach receipt image/PDF:\n"
+            "   /uploadtoreceiptdataset\n\n"
+            "2. Manual format (pipe-delimited):\n"
+            "   /uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|transaction_date|transaction_time|currency|currency_keyword"
+        )
+        return
+
+    storage.save_receipt_dataset(
+        bank_name=fields[0],
+        receiver_name=fields[1],
+        receiver_keyword=fields[2],
+        ref_id=fields[3],
+        transaction_date=fields[4],
+        transaction_time=fields[5],
+        currency=fields[6],
+        currency_keyword=fields[7],
+    )
+    await event.reply(f"Saved to receipt_dataset: {fields[0]} | {fields[1]} | {fields[6]}")
 
 

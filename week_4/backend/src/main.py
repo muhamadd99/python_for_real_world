@@ -12,12 +12,12 @@ from .telegram_bot import run_userbot
 def main() -> None:
     load_dotenv()
     
-	# Debug: Check if env vars are loaded
-    print(f"TELEGRAM_API_ID: {os.getenv('TELEGRAM_API_ID')}")
-    print(f"TELEGRAM_API_HASH: {os.getenv('TELEGRAM_API_HASH')}")
-    print(f"TELEGRAM_SESSION: {os.getenv('TELEGRAM_SESSION')}")
-    config = Config.from_env()
-    print(f"Config: {config}")  # This will show if config loaded correctl
+	# # Debug: Check if env vars are loaded
+    # print(f"TELEGRAM_API_ID: {os.getenv('TELEGRAM_API_ID')}")
+    # print(f"TELEGRAM_API_HASH: {os.getenv('TELEGRAM_API_HASH')}")
+    # print(f"TELEGRAM_SESSION: {os.getenv('TELEGRAM_SESSION')}")
+    # config = Config.from_env()
+    # print(f"Config: {config}")  # This will show if config loaded correctl
 
     config = Config.from_env()
     storage = Storage(config.database_path)
@@ -26,7 +26,7 @@ def main() -> None:
     def handler(file_path: str, sender: str, contact_name: str = None) -> dict:
         return process_receipt(file_path, sender, storage, config, contact_name)
 
-    run_userbot(config, handler)
+    run_userbot(config, handler, storage)
 
 
 if __name__ == "__main__":

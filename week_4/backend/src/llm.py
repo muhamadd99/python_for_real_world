@@ -14,9 +14,12 @@ SYSTEM_PROMPT = (
     "Parse OCR text from bank receipts and return strict JSON only."
 )
 
-def parse_receipt_text(text: str) -> dict:
+def parse_receipt_text(text: str, receiver_keywords: list[str] | None = None) -> dict:
     bank_name = _find_bank_name(text)
-    receiver_name = _find_receiver_name(text)
+    receiver_name = _find_receiver_name(text, receiver_keywords)
+    receiver_keyword, receiver_from_keyword = _find_receiver_keyword(text)
+    if not receiver_name:
+        receiver_name = receiver_from_keyword
     amount = _find_amount(text)
     reference_id = _find_reference_id(text)
     date = _find_date(text)
@@ -42,6 +45,7 @@ def parse_receipt_text(text: str) -> dict:
     return {
         "bank_name": bank_name,
         "receiver_name": receiver_name,
+        "receiver_keyword": receiver_keyword,
         "amount": amount,
         "currency": _find_currency(text),
         "reference_id": reference_id,
@@ -92,14 +96,45 @@ def _find_date(text: str) -> str | None:
     return None
 
 def _find_time(text: str) -> str | None:
-    match = re.search(r"(\d{2}:\d{2}(?::\d{2})?)", text)
-    return match.group(1) if match else None
-
-def _find_receiver_name(text: str):
-    match = re.search(r"beneficiary\s*name\s*\n\s*(.+)", text, re.IGNORECASE)
+    match = re.search(r"(\d{1,2}:\d{2}(?::\d{2})?)\s*(am|pm)?", text, re.IGNORECASE)
     if match:
-        return match.group(1).strip()
+        time_str = match.group(1)
+        suffix = (match.group(2) or "").lower()
+        if len(time_str) == 4:
+            time_str = "0" + time_str
+        if suffix:
+            time_str += " " + suffix.upper()
+        return time_str
     return None
+
+def _find_receiver_name(text: str, receiver_keywords: list[str] | None = None):
+    if receiver_keywords:
+        for keyword in receiver_keywords:
+            pattern = re.escape(keyword) + r"\s*[:\s]\s*(.+)"
+            match = re.search(pattern, text, re.IGNORECASE)
+            # DEBUG START
+            import sys
+            escaped = re.escape(keyword)
+            print(f"[DEBUG] keyword='{keyword}'  escaped='{escaped}'  pattern='{pattern}'  match={'YES -> ' + repr(match.group(1).strip()) if match else 'NO'}", file=sys.stderr, flush=True)
+            # DEBUG END
+            if match:
+                return match.group(1).strip()
+
+    return None
+
+CURRENCY_KEYWORDS = {"RM", "MYR", "RM1", "RM2", "RM3", "RM4", "RM5", "RM6", "RM7", "RM8", "RM9"}
+
+RECEIVER_LABELS = {"to", "beneficiary", "recipient", "payee", "receiver", "transfer", "name"}
+
+def _find_receiver_keyword(text: str) -> tuple[str, str] | tuple[None, None]:
+    matches = re.findall(r"(\w+[.:]?)\s*\n\s*([A-Z][A-Z\s]{3,})", text)
+    for keyword, name in reversed(matches):
+        if keyword.lower().rstrip(":.") not in RECEIVER_LABELS:
+            continue
+        name_clean = re.sub(r"\s+", "", name)
+        if len(name_clean) >= 5 and name_clean.upper() not in CURRENCY_KEYWORDS:
+            return keyword, name.strip()
+    return None, None
 
 def confirm_amount_with_ai(parsed: dict, raw_text: str, config: Config) -> dict:
     """Use LLM to confirm the regex-extracted amount."""

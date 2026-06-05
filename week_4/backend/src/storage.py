@@ -32,16 +32,23 @@ class Storage:
             )
             conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS bank_blueprints (
+                CREATE TABLE IF NOT EXISTS receipt_dataset (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     bank_name TEXT,
-                    rules_json TEXT
+                    receiver_name TEXT,
+                    receiver_keyword TEXT,
+                    ref_id TEXT,
+                    transaction_date TEXT,
+                    transaction_time TEXT,
+                    currency TEXT,
+                    currency_keyword TEXT
                 )
                 """
             )
 
     def save_receipt(self, sender: str, file_path: str, raw_text: str, parsed: dict) -> None:
-        parsed_json = json.dumps(parsed, ensure_ascii=True)
+        parsed_clean = {k: v for k, v in parsed.items() if k != "receiver_keyword"}
+        parsed_json = json.dumps(parsed_clean, ensure_ascii=True)
         reference_id = parsed.get("reference_id") if isinstance(parsed, dict) else None
         status = parsed.get("status") if isinstance(parsed, dict) else None
         contact_name = parsed.get("contact_name")
@@ -60,3 +67,44 @@ class Storage:
                 "SELECT 1 FROM receipts WHERE reference_id = ? LIMIT 1", (reference_id,)
             )
             return cursor.fetchone() is not None
+
+    def save_receipt_dataset(self, bank_name: str, receiver_name: str, receiver_keyword: str,
+                             ref_id: str, transaction_date: str, transaction_time: str,
+                             currency: str, currency_keyword: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO receipt_dataset
+                    (bank_name, receiver_name, receiver_keyword, ref_id,
+                     transaction_date, transaction_time, currency, currency_keyword)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (bank_name, receiver_name, receiver_keyword, ref_id,
+                 transaction_date, transaction_time, currency, currency_keyword),
+            )
+
+    def get_currency_keywords(self, bank_name: str | None = None) -> list[str]:
+        with self.connect() as conn:
+            if bank_name:
+                cursor = conn.execute(
+                    "SELECT DISTINCT currency_keyword FROM receipt_dataset WHERE bank_name = ?",
+                    (bank_name,),
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT DISTINCT currency_keyword FROM receipt_dataset"
+                )
+            return [row[0] for row in cursor.fetchall() if row[0]]
+
+    def get_receiver_keywords(self, bank_name: str | None = None) -> list[str]:
+        with self.connect() as conn:
+            if bank_name:
+                cursor = conn.execute(
+                    "SELECT DISTINCT receiver_keyword FROM receipt_dataset WHERE bank_name = ?",
+                    (bank_name,),
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT DISTINCT receiver_keyword FROM receipt_dataset"
+                )
+            return [row[0] for row in cursor.fetchall() if row[0]]

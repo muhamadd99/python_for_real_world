@@ -4,18 +4,24 @@ from typing import Iterable
 
 from pypdf import PdfReader
 
-from .ocr import ocr_image
+from .ocr_easy import ocr_image_easyocr as ocr_image
+from typing import Callable
 
 
-def extract_text_from_pdf(pdf_path: str) -> str:
-    reader = PdfReader(pdf_path)
-    text_chunks = []
-    for page in reader.pages:
-        text_chunks.append(page.extract_text() or "")
-    text = "\n".join(text_chunks).strip()
+def extract_text_from_pdf(pdf_path: str, ocr_fn: Callable[[str], str] | None = None, force_image: bool = False) -> str:
+    if ocr_fn is None:
+        ocr_fn = ocr_image
 
-    if text:
-        return text
+    if not force_image:
+        reader = PdfReader(pdf_path)
+        text_chunks = []
+        for page in reader.pages:
+            text_chunks.append(page.extract_text() or "")
+        text = "\n".join(text_chunks).strip()
+
+        if text:
+            print("PDF has extractable text, skipping OCR")
+            return text
 
     images = _pdf_to_images(pdf_path)
     if not images:
@@ -23,20 +29,24 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
     ocr_chunks = []
     for image_path in images:
-        ocr_chunks.append(ocr_image(image_path))
+        print(f"Running OCR on {image_path}...")
+        result = ocr_fn(image_path)
+        print(f"OCR result length: {len(result)} chars")
+        ocr_chunks.append(result)
     return "\n".join(ocr_chunks).strip()
 
 
-def _pdf_to_images(pdf_path: str) -> list[str]:
+def _pdf_to_images(pdf_path: str, dpi: int = 300) -> list[str]:
     try:
         from pdf2image import convert_from_path
     except ImportError:
         return []
 
-    images = convert_from_path(pdf_path)
+    images = convert_from_path(pdf_path, dpi=dpi)
     image_paths = []
     for idx, image in enumerate(images, start=1):
         image_path = f"{pdf_path}.page{idx}.png"
         image.save(image_path, "PNG")
+        print(f"PDF page {idx} converted: {image.width}x{image.height}px -> {image_path}")
         image_paths.append(image_path)
     return image_paths

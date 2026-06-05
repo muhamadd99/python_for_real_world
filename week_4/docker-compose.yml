@@ -27,7 +27,11 @@ services:
       - ./.env
     volumes:
       - ./backend/data:/app/data
+      - easyocr_cache:/root/.EasyOCR
     stdin_open: true #for phone number
     tty: true # for phone number
     depends_on:
       - backend
+
+volumes:
+  easyocr_cache:

@@ -24,8 +24,8 @@ AutoSport-Pay is an AI-powered payment verification assistant for community spor
 ## 🤖 System Architecture & AI Component
 
 ```text
-                                  [ Bank Receipt Blueprints DB ]
-                                  (Stores Gold Formats/Rules/Regex)
+                                  [ Receipt Dataset DB ]
+                                  (Known Bank Fields/Keywords)
                                                  │
                                                  ▼ (Reads Rules)
 [ Player App ] ──► [ Organizer TG ] ──► [ Userbot Script ] ──► [ OCR + LLM ]
@@ -70,12 +70,12 @@ Recommended flow: try direct PDF text extraction first, then fallback to OCR if 
 
 ---
 
-## 🗂️ Data Component (Receipt Archive + Bank Blueprint DB)
+## 🗂️ Data Component (Receipt Archive + Receipt Dataset DB)
 
-The data layer stores both raw receipts and structured formats.
+The data layer stores both raw receipts and a curated dataset of known receipt fields.
 
 - **Receipt Archive:** Saves incoming receipt images/PDFs and extracted OCR text for traceability.
-- **Bank Blueprint DB:** A curated library of known bank receipt formats, required fields, and validation regex rules.
+- **Receipt Dataset DB:** Stores known bank receipt field patterns (bank_name, receiver_name, receiver_keyword, ref_id, transaction_date, transaction_time, currency, currency_keyword). This dataset is used to improve currency and receiver detection by referencing commonly observed keywords across receipts.
 
 This enables consistent parsing across different banks and improves fraud detection over time.
 
@@ -107,7 +107,7 @@ The AI component must return strict JSON for downstream validation and storage:
 2. If a message contains an image or PDF, download it.
 3. Extract text (PDF text or OCR fallback).
 4. Send text to LLM parser.
-5. Validate against bank blueprint rules.
+5. Validate against receipt dataset rules.
 6. Update the real-time payment manifest.
 
 ---
