@@ -7,6 +7,7 @@ autosport_pay_backend.egg-info/top_level.txt
 src/__init__.py
 src/api.py
 src/config.py
+src/init_session.py
 src/llm.py
 src/main.py
 src/ocr.py

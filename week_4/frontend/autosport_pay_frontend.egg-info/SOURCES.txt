@@ -1,0 +1,8 @@
+pyproject.toml
+autosport_pay_frontend.egg-info/PKG-INFO
+autosport_pay_frontend.egg-info/SOURCES.txt
+autosport_pay_frontend.egg-info/dependency_links.txt
+autosport_pay_frontend.egg-info/requires.txt
+autosport_pay_frontend.egg-info/top_level.txt
+src/__init__.py
+src/main.py

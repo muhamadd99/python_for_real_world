@@ -1,1 +1,0 @@
-# This is a README for K-youth programme. Do find the README of every week project in each corresponding folders.
