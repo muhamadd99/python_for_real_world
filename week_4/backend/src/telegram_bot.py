@@ -12,7 +12,6 @@ from telethon.tl.functions.contacts import GetContactsRequest
 from .config import Config
 from .storage import Storage
 from .llm import parse_receipt_text
-from .ocr import ocr_image
 from .ocr_easy import ocr_image_easyocr
 from .pdf_utils import extract_text_from_pdf
 
