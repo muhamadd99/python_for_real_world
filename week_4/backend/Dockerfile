@@ -10,7 +10,6 @@ RUN apt-get update \
         libpng-dev \
         libtiff-dev \
         libwebp-dev \
-        tesseract-ocr \
         poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 

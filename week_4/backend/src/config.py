@@ -11,7 +11,6 @@ class Config:
     telegram_session: str | None
     llm_provider: str
     llm_api_key: str | None
-    ocr_engine: str
     database_path: str
 
     @staticmethod
@@ -25,6 +24,5 @@ class Config:
             telegram_session=os.getenv("TELEGRAM_SESSION"),
             llm_provider=os.getenv("LLM_PROVIDER", "mock"),
             llm_api_key=os.getenv("LLM_API_KEY"),
-            ocr_engine=os.getenv("OCR_ENGINE", "tesseract"),
             database_path=os.getenv("DATABASE_PATH", "./data/autosport_pay.db"),
         )
