@@ -9,7 +9,7 @@ description = "Telegram userbot pipeline for receipt parsing and validation"
 requires-python = ">=3.14"
 dependencies = [
   "telethon==1.36.0",
-  "pypdf==4.2.0",
+  "pypdf==5.0.0",
   "pillow==10.4.0",
   "pytesseract==0.3.13",
   "easyocr==1.7.2",
