@@ -108,3 +108,13 @@ class Storage:
                     "SELECT DISTINCT receiver_keyword FROM receipt_dataset"
                 )
             return [row[0] for row in cursor.fetchall() if row[0]]
+        
+    def delete_receipt(self, receipt_id: int) -> bool:
+        with self.connect() as conn:
+            cursor = conn.execute("DELETE FROM receipts WHERE id = ?", (receipt_id,))
+            return cursor.rowcount > 0
+
+    def delete_all_receipts(self) -> int:
+        with self.connect() as conn:
+            cursor = conn.execute("DELETE FROM receipts")
+            return cursor.rowcount

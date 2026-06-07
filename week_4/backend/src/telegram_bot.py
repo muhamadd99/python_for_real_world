@@ -40,6 +40,10 @@ async def _run(config: Config, handler: Callable[[str, str], dict], storage: Sto
         text = event.raw_text.strip() if event.raw_text else ""
         if text.lower() == "/list":
             await send_list(event, config.database_path)
+        elif text.lower() == "/deleteall":
+            await handle_delete_all(event, storage)
+        elif text.lower().startswith("/delete"):
+            await handle_delete(event, text, storage)
         elif text.lower().startswith("/uploadtoreceiptdataset"):
             await handle_upload_to_receipt_dataset(event, text, storage, config)
 
@@ -86,7 +90,7 @@ async def get_contact_name(sender_id: str, contact_map: dict, client) -> str:
 
 async def send_list(event, db_path: str) -> None:
     conn = sqlite3.connect(db_path)
-    rows = conn.execute("SELECT sender, contact_name, parsed_json FROM receipts").fetchall()
+    rows = conn.execute("SELECT id, sender, contact_name, parsed_json FROM receipts").fetchall()
     conn.close()
 
     if not rows:
@@ -94,7 +98,7 @@ async def send_list(event, db_path: str) -> None:
         return
 
     lines = []
-    for sender, contact_name, parsed in rows:
+    for row_id, sender, contact_name, parsed in rows:
         data = json.loads(parsed)
         payer = contact_name or sender
         status = data.get("status")
@@ -106,7 +110,7 @@ async def send_list(event, db_path: str) -> None:
             ai_status = f"AI OVERWRITE{{{data.get('amount_regex')}}}"
         else:
             ai_status = "NO AI CHECK"
-        lines.append(f"{payer} — {status} — RM{amount} — {ai_status}")
+        lines.append(f"[{row_id}] {payer} — {status} — RM{amount} — {ai_status}")
 
     await event.reply("\n".join(lines))
 
@@ -188,3 +192,18 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
     await event.reply(f"Saved to receipt_dataset: {fields[0]} | {fields[1]} | {fields[6]}")
 
 
+async def handle_delete(event, text: str, storage: Storage) -> None:
+    args = text[len("/delete"):].strip()
+    if not args.isdigit():
+        await event.reply("Usage: /delete <receipt_id>\nUse /list to see IDs.")
+        return
+    
+    receipt_id = int(args)
+    if storage.delete_receipt(receipt_id):
+        await event.reply(f"Receipt {receipt_id} deleted.")
+    else:
+        await event.reply(f"Receipt {receipt_id} not found.")
+
+async def handle_delete_all(event, storage: Storage) -> None:
+    count = storage.delete_all_receipts()
+    await event.reply(f"Deleted {count} receipts from database.")

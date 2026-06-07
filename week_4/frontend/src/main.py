@@ -40,7 +40,7 @@ async def proxy_receipt(file: UploadFile = File(...), sender: str = "web") -> di
     files = {"file": (file.filename, content, file.content_type)}
     data = {"sender": sender}
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=180) as client:
         response = await client.post(f"{BACKEND_URL}/receipts", files=files, data=data)
 
     if response.status_code >= 400:
