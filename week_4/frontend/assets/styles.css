@@ -153,6 +153,20 @@ h1 {
   transform: translateY(-1px);
 }
 
+.file-drop.has-file {
+  border-color: var(--accent);
+  background: #f0fafb;
+  border-style: solid;
+}
+
+.file-drop .upload-again {
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 8px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .result {
   margin-top: 20px;
   padding: 16px;
@@ -165,6 +179,14 @@ h1 {
   white-space: pre-wrap;
   font-size: 0.85rem;
   color: #2f3b3b;
+}
+
+.reason-cell {
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-width: 180px;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .receipts-section {

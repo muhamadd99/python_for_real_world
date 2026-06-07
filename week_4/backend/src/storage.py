@@ -112,11 +112,21 @@ class Storage:
     def delete_receipt(self, receipt_id: int) -> bool:
         with self.connect() as conn:
             cursor = conn.execute("DELETE FROM receipts WHERE id = ?", (receipt_id,))
-            return cursor.rowcount > 0
+            if cursor.rowcount > 0:
+                conn.execute("""
+                    UPDATE receipts SET id = (
+                        SELECT COUNT(*) FROM receipts r2 
+                        WHERE r2.id <= receipts.id
+                    )
+                """)
+                conn.execute("DELETE FROM sqlite_sequence WHERE name = 'receipts'")
+                return True
+            return False
 
     def delete_all_receipts(self) -> int:
         with self.connect() as conn:
             cursor = conn.execute("DELETE FROM receipts")
+            conn.execute("DELETE FROM sqlite_sequence WHERE name = 'receipts'")
             return cursor.rowcount
         
     def get_all_receipts(self) -> list[dict]:
@@ -133,6 +143,7 @@ class Storage:
                 "contact_name": contact_name,
                 "status": status,
                 "reference_id": reference_id,
+                "reasons": parsed.get("reasons", []),
                 "amount": parsed.get("amount"),
                 "bank_name": parsed.get("bank_name"),
                 "receiver_name": parsed.get("receiver_name"),

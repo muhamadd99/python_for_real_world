@@ -1,4 +1,5 @@
 const form = document.getElementById("receipt-form");
+const dropLabel = document.querySelector('.file-drop > div');
 const fileInput = document.getElementById("receipt-file");
 const senderInput = document.getElementById("sender");
 const resultBox = document.getElementById("result");
@@ -39,6 +40,26 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+function updateDropZone() {
+  if (fileInput.files.length > 0) {
+    const fileName = fileInput.files[0].name;
+    dropLabel.innerHTML = `
+      <h3>✓ Completed</h3>
+      <p>${fileName}</p>
+      <p class="upload-again">Choose File / Upload Receipt</p>
+    `;
+    document.querySelector('.file-drop').classList.add('has-file');
+  } else {
+    dropLabel.innerHTML = `
+      <h3>Drop receipt here</h3>
+      <p>or click to upload (PNG, JPG, PDF)</p>
+    `;
+    document.querySelector('.file-drop').classList.remove('has-file');
+  }
+}
+
+fileInput.addEventListener('change', updateDropZone);
+
 async function loadReceipts() {
   const tbody = document.getElementById("receipts-tbody");
   try {
@@ -53,6 +74,7 @@ async function loadReceipts() {
       <tr>
         <td class="receipt-id">#${r.id}</td>
         <td><span class="receipt-status status-${(r.status || "").toLowerCase()}">${r.status || "UNKNOWN"}</span></td>
+        <td class="reason-cell">${(r.reasons && r.reasons.length) ? r.reasons.join(", ") : "—"}</td>
         <td>${r.contact_name || r.sender || "—"}</td>
         <td>${r.amount ? "RM" + r.amount : "—"}</td>
         <td>${r.bank_name || "—"}</td>
