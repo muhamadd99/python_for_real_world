@@ -118,3 +118,24 @@ class Storage:
         with self.connect() as conn:
             cursor = conn.execute("DELETE FROM receipts")
             return cursor.rowcount
+        
+    def get_all_receipts(self) -> list[dict]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT id, sender, contact_name, parsed_json, status, reference_id FROM receipts ORDER BY id DESC"
+            ).fetchall()
+        results = []
+        for row_id, sender, contact_name, parsed_json, status, reference_id in rows:
+            parsed = json.loads(parsed_json) if parsed_json else {}
+            results.append({
+                "id": row_id,
+                "sender": sender,
+                "contact_name": contact_name,
+                "status": status,
+                "reference_id": reference_id,
+                "amount": parsed.get("amount"),
+                "bank_name": parsed.get("bank_name"),
+                "receiver_name": parsed.get("receiver_name"),
+                "transaction_date": parsed.get("transaction_date"),
+            })
+        return results

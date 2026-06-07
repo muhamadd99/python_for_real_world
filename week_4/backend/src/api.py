@@ -25,6 +25,10 @@ storage.init_schema()
 def health() -> dict:
     return {"status": "ok"}
 
+@app.get("/receipts")
+def list_receipts() -> JSONResponse:
+    receipts = storage.get_all_receipts()
+    return JSONResponse(receipts)
 
 @app.post("/receipts")
 async def upload_receipt(file: UploadFile = File(...), sender: str = "web") -> JSONResponse:

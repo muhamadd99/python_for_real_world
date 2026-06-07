@@ -16,16 +16,6 @@
             Upload a bank transfer receipt and get a validated status in seconds. Works with
             images and PDFs.
           </p>
-          <div class="stats">
-            <div>
-              <span class="stat-value">3</span>
-              <span class="stat-label">validation tiers</span>
-            </div>
-            <div>
-              <span class="stat-value">1</span>
-              <span class="stat-label">simple upload</span>
-            </div>
-          </div>
         </div>
         <div class="hero-card">
           <form id="receipt-form" class="upload-card">
@@ -46,6 +36,28 @@
             <h4>Status</h4>
             <pre id="result-json"></pre>
           </div>
+        </div>
+      </section>
+      <section class="receipts-section">
+        <h2>Recent Receipts</h2>
+        <div class="table-wrapper">
+          <table id="receipts-table" class="receipts-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Status</th>
+                <th>Sender</th>
+                <th>Amount</th>
+                <th>Bank</th>
+                <th>Receiver</th>
+                <th>Date</th>
+                <th>Ref</th>
+              </tr>
+            </thead>
+            <tbody id="receipts-tbody">
+              <tr><td colspan="8" class="muted">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </main>

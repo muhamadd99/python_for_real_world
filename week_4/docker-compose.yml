@@ -8,6 +8,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/data:/app/data #host_path:container_path
+      - ./backend/src:/app/src #remove when finish dev
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload #remove when finish dev
 
   frontend:
     build:
@@ -16,6 +18,9 @@ services:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:8000
+    volumes:
+    - ./frontend/src:/app/src #remove when finish dev
+    command: uvicorn src.main:app --host 0.0.0.0 --port 3000 --reload #remove when finish dev
     depends_on:
       - backend
 
@@ -27,6 +32,7 @@ services:
       - ./.env
     volumes:
       - ./backend/data:/app/data
+      - ./backend/src:/app/src
       - easyocr_cache:/root/.EasyOCR
     stdin_open: true #for phone number
     tty: true # for phone number

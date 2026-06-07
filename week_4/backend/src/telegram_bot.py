@@ -110,7 +110,11 @@ async def send_list(event, db_path: str) -> None:
             ai_status = f"AI OVERWRITE{{{data.get('amount_regex')}}}"
         else:
             ai_status = "NO AI CHECK"
-        lines.append(f"[{row_id}] {payer} — {status} — RM{amount} — {ai_status}")
+        reasons = data.get("reasons", [])
+        line = f"[{row_id}] {payer} — {status} — RM{amount} — {ai_status}"
+        if reasons and status in ("INVALID", "FISHY"):
+            line += f"\n    └─ {', '.join(reasons)}"
+        lines.append(line)
 
     await event.reply("\n".join(lines))
 

@@ -37,10 +37,10 @@ def parse_receipt_text(text: str, receiver_keywords: list[str] | None = None) ->
 
     if missing:
         status = "INVALID"
-        reasons.append(f"missing_required_fields: {', '.join(missing)}")
+        reasons.append(f"missings: {', '.join(missing)}")
     elif date_missing:
         status = "OKLAH"
-        reasons.append("missing_optional_fields: transaction_date")
+        reasons.append("missing: transaction_date")
 
     return {
         "bank_name": bank_name,

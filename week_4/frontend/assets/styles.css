@@ -167,6 +167,94 @@ h1 {
   color: #2f3b3b;
 }
 
+.receipts-section {
+  margin-top: 48px;
+}
+
+.receipts-section h2 {
+  font-family: "Fraunces", serif;
+  font-size: 1.6rem;
+  margin-bottom: 16px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.receipts-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: 0.9rem;
+}
+
+.receipts-table thead {
+  background: var(--accent);
+  color: #fff;
+}
+
+.receipts-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.receipts-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+
+.receipts-table tbody tr:hover {
+  background: #f7fafb;
+}
+
+.receipts-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.receipts-table .receipt-id {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.receipts-table .receipt-status {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.receipts-table .ref-cell {
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.receipts-table .muted {
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  padding: 24px 14px;
+}
+
+.status-valid { background: #d4edda; color: #155724; }
+.status-invalid { background: #f8d7da; color: #721c24; }
+.status-fishy { background: #fff3cd; color: #856404; }
+.status-oklah { background: #d1ecf1; color: #0c5460; }
+
+.muted {
+  color: var(--muted);
+  font-style: italic;
+}
+
 .hidden {
   display: none;
 }

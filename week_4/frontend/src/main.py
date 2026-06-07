@@ -25,11 +25,15 @@ app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 async def index() -> HTMLResponse:
     return HTMLResponse((BASE_DIR / "index.html").read_text(encoding="utf-8"))
 
-
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "backend": BACKEND_URL}
 
+@app.get("/api/receipts")
+async def proxy_list_receipts() -> list:
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(f"{BACKEND_URL}/receipts")
+    return response.json()
 
 @app.post("/api/receipts")
 async def proxy_receipt(file: UploadFile = File(...), sender: str = "web") -> dict:
