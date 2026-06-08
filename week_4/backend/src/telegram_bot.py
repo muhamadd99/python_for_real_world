@@ -38,14 +38,50 @@ async def _run(config: Config, handler: Callable[[str, str], dict], storage: Sto
     @client.on(events.NewMessage(outgoing=True))
     async def on_outgoing(event) -> None:
         text = event.raw_text.strip() if event.raw_text else ""
-        if text.lower() == "/list":
+    
+        if not text.lower().startswith("/receiptbot"):
+            return
+    
+        args = text[len("/receiptbot"):].strip()
+    
+        # No params → show welcome message
+        if not args:
+            await event.reply(
+                "Hello user! Welcome to ReceiptBot.\n\n"
+                "How to use:\n"
+                "1) /receiptbot uploadtoreceiptdataset — Upload receipt image/PDF to dataset\n"
+                "2) /receiptbot list — View all stored receipts\n"
+                "3) /receiptbot delete <id> — Delete a specific receipt\n"
+                "4) /receiptbot deleteall — Delete all receipts\n"
+                "5) /receiptbot help — Show this help message"
+            )
+            return
+    
+        # Parse subcommand
+        parts = args.split(maxsplit=1)
+        subcommand = parts[0].lower()
+        sub_args = parts[1] if len(parts) > 1 else ""
+    
+        if subcommand == "help":
+            await event.reply(
+                "ReceiptBot Commands:\n"
+                "• /receiptbot — Show this menu\n"
+                "• /receiptbot uploadtoreceiptdataset — Upload receipt (attach image or use pipe-delimited format)\n"
+                "• /receiptbot list — List all receipts\n"
+                "• /receiptbot delete <id> — Delete receipt by ID\n"
+                "• /receiptbot deleteall — Delete all receipts"
+            )
+        elif subcommand == "list":
             await send_list(event, config.database_path)
-        elif text.lower() == "/deleteall":
+        elif subcommand == "deleteall":
             await handle_delete_all(event, storage)
-        elif text.lower().startswith("/delete"):
-            await handle_delete(event, text, storage)
-        elif text.lower().startswith("/uploadtoreceiptdataset"):
-            await handle_upload_to_receipt_dataset(event, text, storage, config)
+        elif subcommand == "delete":
+            await handle_delete(event, sub_args, storage)
+        elif subcommand == "uploadtoreceiptdataset":
+            # Reconstruct full text for the handler
+            await handle_upload_to_receipt_dataset(event, f"/uploadtoreceiptdataset {sub_args}", storage, config)
+        else:
+            await event.reply(f"Unknown command: {subcommand}\nType /receiptbot help for available commands.")
 
     print("Telegram userbot started. Waiting for receipts...")
     await client.start()
@@ -196,10 +232,9 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
     await event.reply(f"Saved to receipt_dataset: {fields[0]} | {fields[1]} | {fields[6]}")
 
 
-async def handle_delete(event, text: str, storage: Storage) -> None:
-    args = text[len("/delete"):].strip()
+async def handle_delete(event, args: str, storage: Storage) -> None:
     if not args.isdigit():
-        await event.reply("Usage: /delete <receipt_id>\nUse /list to see IDs.")
+        await event.reply("Usage: /receiptbot delete <receipt_id>\nUse /receiptbot list to see IDs.")
         return
     
     receipt_id = int(args)
