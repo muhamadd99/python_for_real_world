@@ -148,7 +148,7 @@ async def send_list(event, db_path: str) -> None:
             ai_status = "NO AI CHECK"
         reasons = data.get("reasons", [])
         line = f"[{row_id}] {payer} — {status} — RM{amount} — {ai_status}"
-        if reasons and status in ("INVALID", "FISHY"):
+        if reasons and status in ("INVALID", "FISHY", "ACCEPTABLE"):
             line += f"\n    └─ {', '.join(reasons)}"
         lines.append(line)
 
@@ -181,7 +181,7 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
             await event.reply(
                 "Could not extract enough fields from receipt.\n"
                 "Fallback: use manual format:\n"
-                "/uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|transaction_date|transaction_time|currency|currency_keyword"
+                "/uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|ref_keyword|transaction_date|transaction_time|currency|currency_keyword"
             )
             return
 
@@ -190,6 +190,7 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
             receiver_name=parsed.get("receiver_name") or "",
             receiver_keyword=parsed.get("receiver_keyword") or "",
             ref_id=parsed.get("reference_id") or "",
+            ref_keyword=parsed.get("ref_keyword") or "",
             transaction_date=parsed.get("transaction_date") or "",
             transaction_time=parsed.get("transaction_time") or "",
             currency=parsed.get("currency") or "",
@@ -201,6 +202,7 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
             f"Receiver: {parsed.get('receiver_name')}\n"
             f"Receiver keyword: {parsed.get('receiver_keyword') or 'not detected'}\n"
             f"Ref: {parsed.get('reference_id')}\n"
+            f"Ref keyword: {parsed.get('ref_keyword') or 'not detected'}\n"
             f"Date: {parsed.get('transaction_date')}\n"
             f"Time: {parsed.get('transaction_time')}\n"
             f"Currency: {parsed.get('currency')}\n"
@@ -209,13 +211,13 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
         return
 
     fields = [f.strip() for f in args.split("|")]
-    if len(fields) != 8:
+    if len(fields) != 9:
         await event.reply(
             "Usage:\n"
             "1. Attach receipt image/PDF:\n"
             "   /uploadtoreceiptdataset\n\n"
             "2. Manual format (pipe-delimited):\n"
-            "   /uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|transaction_date|transaction_time|currency|currency_keyword"
+            "   /uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|ref_keyword|transaction_date|transaction_time|currency|currency_keyword"
         )
         return
 
@@ -224,10 +226,11 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
         receiver_name=fields[1],
         receiver_keyword=fields[2],
         ref_id=fields[3],
-        transaction_date=fields[4],
-        transaction_time=fields[5],
-        currency=fields[6],
-        currency_keyword=fields[7],
+        ref_keyword=fields[4],
+        transaction_date=fields[5],
+        transaction_time=fields[6],
+        currency=fields[7],
+        currency_keyword=fields[8],
     )
     await event.reply(f"Saved to receipt_dataset: {fields[0]} | {fields[1]} | {fields[6]}")
 

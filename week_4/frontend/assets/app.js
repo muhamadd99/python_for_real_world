@@ -77,10 +77,10 @@ async function loadReceipts() {
         <td class="reason-cell">${(r.reasons && r.reasons.length) ? r.reasons.join(", ") : "—"}</td>
         <td>${r.contact_name || r.sender || "—"}</td>
         <td>${r.amount ? "RM" + r.amount : "—"}</td>
-        <td>${r.bank_name || "—"}</td>
         <td>${r.receiver_name || "—"}</td>
-        <td>${r.transaction_date || "—"}</td>
         <td class="ref-cell">${r.reference_id || "—"}</td>
+        <td>${r.transaction_date || "—"}</td>
+        <td>${r.bank_name || "—"}</td>
       </tr>
     `).join("");
   } catch (e) {

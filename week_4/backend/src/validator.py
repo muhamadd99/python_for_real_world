@@ -27,9 +27,9 @@ def validate_receipt(parsed: dict, storage: Storage) -> dict:
             if reason not in reasons:
                 reasons.append(reason)
         elif date_missing and status != "FISHY":
-            status = "OKLAH"
+            status = "ACCEPTABLE"
             if "missing: transaction_date" not in reasons:
-                reasons.append("missings: transaction_date")
+                reasons.append("missing: transaction_date")
 
     if reference_id and storage.has_reference_id(reference_id):
         status = "FISHY"

@@ -38,6 +38,7 @@ class Storage:
                     receiver_name TEXT,
                     receiver_keyword TEXT,
                     ref_id TEXT,
+                    ref_keyword TEXT,
                     transaction_date TEXT,
                     transaction_time TEXT,
                     currency TEXT,
@@ -47,7 +48,7 @@ class Storage:
             )
 
     def save_receipt(self, sender: str, file_path: str, raw_text: str, parsed: dict) -> None:
-        parsed_clean = {k: v for k, v in parsed.items() if k != "receiver_keyword"}
+        parsed_clean = {k: v for k, v in parsed.items() if k not in ("receiver_keyword", "ref_keyword", "currency_keyword")}
         parsed_json = json.dumps(parsed_clean, ensure_ascii=True)
         reference_id = parsed.get("reference_id") if isinstance(parsed, dict) else None
         status = parsed.get("status") if isinstance(parsed, dict) else None
@@ -69,17 +70,17 @@ class Storage:
             return cursor.fetchone() is not None
 
     def save_receipt_dataset(self, bank_name: str, receiver_name: str, receiver_keyword: str,
-                             ref_id: str, transaction_date: str, transaction_time: str,
+                             ref_id: str, ref_keyword: str, transaction_date: str, transaction_time: str,
                              currency: str, currency_keyword: str) -> None:
         with self.connect() as conn:
             conn.execute(
                 """
                 INSERT INTO receipt_dataset
-                    (bank_name, receiver_name, receiver_keyword, ref_id,
+                    (bank_name, receiver_name, receiver_keyword, ref_id, ref_keyword,
                      transaction_date, transaction_time, currency, currency_keyword)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (bank_name, receiver_name, receiver_keyword, ref_id,
+                (bank_name, receiver_name, receiver_keyword, ref_id, ref_keyword,
                  transaction_date, transaction_time, currency, currency_keyword),
             )
 
@@ -106,6 +107,19 @@ class Storage:
             else:
                 cursor = conn.execute(
                     "SELECT DISTINCT receiver_keyword FROM receipt_dataset"
+                )
+            return [row[0] for row in cursor.fetchall() if row[0]]
+
+    def get_ref_keywords(self, bank_name: str | None = None) -> list[str]:
+        with self.connect() as conn:
+            if bank_name:
+                cursor = conn.execute(
+                    "SELECT DISTINCT ref_keyword FROM receipt_dataset WHERE bank_name = ?",
+                    (bank_name,),
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT DISTINCT ref_keyword FROM receipt_dataset"
                 )
             return [row[0] for row in cursor.fetchall() if row[0]]
         
@@ -147,6 +161,7 @@ class Storage:
                 "amount": parsed.get("amount"),
                 "bank_name": parsed.get("bank_name"),
                 "receiver_name": parsed.get("receiver_name"),
+                "ref_keyword": parsed.get("ref_keyword"),
                 "transaction_date": parsed.get("transaction_date"),
             })
         return results
