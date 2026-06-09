@@ -5,14 +5,14 @@ from .storage import Storage
 
 def validate_receipt(parsed: dict, storage: Storage) -> dict:
     reasons = list(parsed.get("reasons", []))
-    status = parsed.get("status", "INVALID")
+    status = parsed.get("status", "VALID")
 
     reference_id = parsed.get("reference_id")
     amount = parsed.get("amount")
     date = parsed.get("transaction_date")
 
     if not reference_id or not amount or not date:
-        status = "INVALID"
+        # status = "INVALID"
         missing = []
         if not reference_id:
             missing.append("reference_id")
@@ -29,7 +29,7 @@ def validate_receipt(parsed: dict, storage: Storage) -> dict:
         elif date_missing and status != "FISHY":
             status = "OKLAH"
             if "missing: transaction_date" not in reasons:
-                reasons.append("missing: transaction_date")
+                reasons.append("missings: transaction_date")
 
     if reference_id and storage.has_reference_id(reference_id):
         status = "FISHY"

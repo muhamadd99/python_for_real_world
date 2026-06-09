@@ -25,22 +25,22 @@ def parse_receipt_text(text: str, receiver_keywords: list[str] | None = None) ->
     date = _find_date(text)
     time = _find_time(text)
 
-    reasons = []
-    status = "VALID"
-    missing = []
-    if not amount:
-        missing.append("amount")
-    if not reference_id:
-        missing.append("reference_id")
+    # reasons = []
+    # status = "VALID"
+    # missing = []
+    # if not amount:
+    #     missing.append("amount")
+    # if not reference_id:
+    #     missing.append("reference_id")
         
-    date_missing = not date
+    # date_missing = not date
 
-    if missing:
-        status = "INVALID"
-        reasons.append(f"missings: {', '.join(missing)}")
-    elif date_missing:
-        status = "OKLAH"
-        reasons.append("missing: transaction_date")
+    # if missing:
+    #     status = "INVALID"
+    #     reasons.append(f"missings: {', '.join(missing)}")
+    # elif date_missing:
+    #     status = "OKLAH"
+    #     reasons.append("missing: transaction_date")
 
     return {
         "bank_name": bank_name,
@@ -51,12 +51,16 @@ def parse_receipt_text(text: str, receiver_keywords: list[str] | None = None) ->
         "reference_id": reference_id,
         "transaction_date": date,
         "transaction_time": time,
-        "status": status,
-        "reasons": reasons,
+        # "status": status,
+        # "reasons": reasons,
     }
 
 def _find_bank_name(text: str) -> str | None:
-    candidates = ["maybank", "cimb", "duitnow", "public bank", "rhb", "hsbc"]
+    
+    match = re.search(r"((?:[\w\s]+?)\s+bank|bank\s+(?:[\w\s]+?))", text, re.IGNORECASE)
+    if match:
+        return match.group(1).strip().title()
+    candidates = ["maybank", "cimb", "public bank", "rhb", "hsbc"]
     lower = text.lower()
     for name in candidates:
         if name in lower:
@@ -64,7 +68,13 @@ def _find_bank_name(text: str) -> str | None:
     return None
 
 def _find_amount(text: str) -> str | None:
-    match = re.search(r"(RM|MYR)\s?([0-9]+(?:\.[0-9]{2})?)", text, re.IGNORECASE)
+    # First try: require .00 decimals
+    match = re.search(r"(RM|MYR)\s?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+    if match:
+        return match.group(2)
+    
+    # Fallback: accept whole numbers too
+    match = re.search(r"(RM|MYR)\s?([0-9]+)", text, re.IGNORECASE)
     if match:
         return match.group(2)
     return None
@@ -84,6 +94,7 @@ def _find_reference_id(text: str) -> str | None:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(match.lastindex)
+    
     return None
 
 def _find_date(text: str) -> str | None:
@@ -111,7 +122,7 @@ def _find_receiver_name(text: str, receiver_keywords: list[str] | None = None):
     if receiver_keywords:
         for keyword in receiver_keywords:
             pattern = re.escape(keyword) + r"\s*[:\s]\s*(.+)"
-            match = re.search(pattern, text, re.IGNORECASE)
+            match = re.search(pattern, text)
             # DEBUG START
             import sys
             escaped = re.escape(keyword)
@@ -153,6 +164,7 @@ def confirm_amount_with_ai(parsed: dict, raw_text: str, config: Config) -> dict:
         parsed["amount_llm_value"] = regex_amount
     else:
         parsed["amount_confirmed"] = False
+        parsed.setdefault("reasons", [])
         parsed["status"] = "FISHY"
         parsed["reasons"] = list(parsed.get("reasons", []))
 
