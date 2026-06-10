@@ -27,23 +27,6 @@ def parse_receipt_text(text: str, receiver_keywords: list[str] | None = None) ->
     date = _find_date(text)
     time = _find_time(text)
 
-    # reasons = []
-    # status = "VALID"
-    # missing = []
-    # if not amount:
-    #     missing.append("amount")
-    # if not reference_id:
-    #     missing.append("reference_id")
-        
-    # date_missing = not date
-
-    # if missing:
-    #     status = "INVALID"
-    #     reasons.append(f"missings: {', '.join(missing)}")
-    # elif date_missing:
-    #     status = "OKLAH"
-    #     reasons.append("missing: transaction_date")
-
     return {
         "bank_name": bank_name,
         "receiver_name": receiver_name,
@@ -54,8 +37,6 @@ def parse_receipt_text(text: str, receiver_keywords: list[str] | None = None) ->
         "ref_keyword": ref_keyword,
         "transaction_date": date,
         "transaction_time": time,
-        # "status": status,
-        # "reasons": reasons,
     }
 
 def _find_bank_name(text: str) -> str | None:
@@ -101,16 +82,6 @@ def _find_reference_id(text: str, ref_keyword: str | None = None) -> str | None:
             print(f"[DEBUG ref_id] found via ref_keyword='{ref_keyword}' → '{match.group(1)}'", file=sys.stderr, flush=True)
             return match.group(1)
         print(f"[DEBUG ref_id] ref_keyword='{ref_keyword}' found no ID, trying fallback", file=sys.stderr, flush=True)
-
-    # --- Fallback: hardcoded patterns ---
-    # patterns = [
-    #     r"reference\s*(id|no\.?)\s*[:\s]*\s*([A-Za-z0-9\-]{6,})",
-    #     r"ref\s*[:\s]+([A-Za-z0-9\-]{6,})",
-    # ]
-    # for pattern in patterns:
-    #     match = re.search(pattern, text, re.IGNORECASE)
-    #     if match:
-    #         return match.group(match.lastindex)
 
     return None
 
