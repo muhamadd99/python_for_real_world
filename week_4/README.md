@@ -36,9 +36,9 @@ AutoSport-Pay is an AI-powered payment verification assistant for community spor
                                      [ Real-Time Console Stream ]
                                      1. Mad PAID
                                      2. Abu PAID
-                                     3. Jai FISHY
+                                     3. Jai ACCEPTABLE
                                      ...
-                                     22. Haziq NOT PAID
+                                     22. Haziq INVALID
 ```
 
 ### 🔵 **Raw Data Tier**
@@ -48,14 +48,14 @@ Captures the initial, unverified document data extracted by OCR across different
 ### 🥈 **Silver Data Tier: Structural Validation**
 
 Checks formatting integrity. Ensures required fields, character counts, and structure match known bank templates.
-- **Failure State:** If structures do not align, mark as `Receipt Failed`.
+- **Failure State:** If structures do not align, mark as `INVALID`.
 
 ### 🥇 **Gold Data Tier: Security & Information Lookup**
 
 Validates extracted fields against strict parameters and duplication rules.
 - **Tracked Variables:** Bank name, reference ID keywords (e.g., *maybank reference ID*, *CIMB OCTO Reference No*), transaction date/time, and field length bounds.
 - **Deduplication Check:** Rejects repeated reference IDs.
-- **Suspicious State:** Mismatches (amount/date window) mark as `Receipt Fishy`.
+- **Suspicious State:** Mismatches (amount/date window) mark as `FISHY`.
 
 ---
 

@@ -29,7 +29,6 @@ async def _run(config: Config, handler: Callable[[str, str], dict], storage: Sto
 
     @client.on(events.NewMessage(incoming=True))
     async def on_incoming(event) -> None:
-        print(f"DEBUG: chat_id={event.chat_id} text={event.raw_text}") #debug
         if not event.message.media:
             return
         await contacts_ready.wait()
