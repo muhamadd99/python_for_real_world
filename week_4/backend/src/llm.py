@@ -354,7 +354,13 @@ def _ask_llm_for_fields(regex_amount: str | None, regex_receiver: str | None,
         response_text = _call_gemini(prompt, config)
         if not response_text:
             return None
-        return json.loads(response_text)
+        text = response_text.strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            # remove first line (```json) and last line (```)
+            lines = [l for l in lines if not l.strip().startswith("```")]
+            text = "\n".join(lines).strip()
+        return json.loads(text)
     except (json.JSONDecodeError, Exception):
         return None
 
@@ -370,6 +376,7 @@ def _call_gemini(prompt: str, config: Config) -> str | None:
             contents=prompt,
         )
         return response.text
-    except Exception:
+    except Exception as e:
+        print(f"[ERROR] Gemini call failed: {e}", file=sys.stderr, flush=True)
         return None
     
