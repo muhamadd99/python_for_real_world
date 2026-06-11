@@ -15,7 +15,6 @@ from .llm import parse_receipt_text
 from .ocr_easy import ocr_image_easyocr
 from .pdf_utils import extract_text_from_pdf
 
-
 async def _run(config: Config, handler: Callable[[str, str], dict], storage: Storage) -> None:
     if not config.telegram_api_id or not config.telegram_api_hash or not config.telegram_session:
         raise RuntimeError("Telegram config missing. Set TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_SESSION")
@@ -32,7 +31,7 @@ async def _run(config: Config, handler: Callable[[str, str], dict], storage: Sto
         if not event.message.media:
             return
         await contacts_ready.wait()
-        await process_receipt(event, handler, contact_map, client)
+        await handle_incoming_receipt(event, handler, contact_map, client)
 
     @client.on(events.NewMessage(outgoing=True))
     async def on_outgoing(event) -> None:
@@ -98,7 +97,7 @@ async def _run(config: Config, handler: Callable[[str, str], dict], storage: Sto
 def run_userbot(config: Config, handler: Callable[[str, str], dict], storage: Storage) -> None:
     asyncio.run(_run(config, handler, storage))
 
-async def process_receipt(event, handler: Callable[[str, str], dict], contact_map: dict,client) -> None:
+async def handle_incoming_receipt(event, handler: Callable[[str, str], dict], contact_map: dict,client) -> None:
     sender_id = str(event.sender_id)
     contact_name = await get_contact_name(sender_id, contact_map, client)
 
@@ -179,8 +178,8 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
         if not parsed.get("bank_name") and not parsed.get("reference_id"):
             await event.reply(
                 "Could not extract enough fields from receipt.\n"
-                "Fallback: use manual format:\n"
-                "/uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|ref_keyword|transaction_date|transaction_time|currency|currency_keyword"
+                # "Fallback: use manual format:\n"
+                # "/uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|ref_keyword|transaction_date|transaction_time|currency|currency_keyword"
             )
             return
 
@@ -209,29 +208,29 @@ async def handle_upload_to_receipt_dataset(event, text: str, storage: Storage, c
         )
         return
 
-    fields = [f.strip() for f in args.split("|")]
-    if len(fields) != 9:
-        await event.reply(
-            "Usage:\n"
-            "1. Attach receipt image/PDF:\n"
-            "   /uploadtoreceiptdataset\n\n"
-            "2. Manual format (pipe-delimited):\n"
-            "   /uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|ref_keyword|transaction_date|transaction_time|currency|currency_keyword"
-        )
-        return
+    # fields = [f.strip() for f in args.split("|")]
+    # if len(fields) != 9:
+    #     await event.reply(
+    #         "Usage:\n"
+    #         "1. Attach receipt image/PDF:\n"
+    #         "   /uploadtoreceiptdataset\n\n"
+    #         "2. Manual format (pipe-delimited):\n"
+    #         "   /uploadtoreceiptdataset bank_name|receiver_name|receiver_keyword|ref_id|ref_keyword|transaction_date|transaction_time|currency|currency_keyword"
+    #     )
+    #     return
 
-    storage.save_receipt_dataset(
-        bank_name=fields[0],
-        receiver_name=fields[1],
-        receiver_keyword=fields[2],
-        ref_id=fields[3],
-        ref_keyword=fields[4],
-        transaction_date=fields[5],
-        transaction_time=fields[6],
-        currency=fields[7],
-        currency_keyword=fields[8],
-    )
-    await event.reply(f"Saved to receipt_dataset: {fields[0]} | {fields[1]} | {fields[6]}")
+    # storage.save_receipt_dataset(
+    #     bank_name=fields[0],
+    #     receiver_name=fields[1],
+    #     receiver_keyword=fields[2],
+    #     ref_id=fields[3],
+    #     ref_keyword=fields[4],
+    #     transaction_date=fields[5],
+    #     transaction_time=fields[6],
+    #     currency=fields[7],
+    #     currency_keyword=fields[8],
+    # )
+    # await event.reply(f"Saved to receipt_dataset: {fields[0]} | {fields[1]} | {fields[6]}")
 
 
 async def handle_delete(event, args: str, storage: Storage) -> None:
