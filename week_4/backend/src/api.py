@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
+from pathlib import Path as FilePath
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Path, UploadFile
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
@@ -30,12 +30,17 @@ def list_receipts() -> JSONResponse:
     receipts = storage.get_all_receipts()
     return JSONResponse(receipts)
 
+@app.delete("/receipts/all")
+def delete_all_receipts() -> JSONResponse:
+    count = storage.delete_all_receipts()
+    return JSONResponse({"status": "ok", "message": f"Deleted {count} receipts."})
+
 @app.post("/receipts")
-async def upload_receipt(file: UploadFile = File(...), sender: str = "web") -> JSONResponse:
+async def upload_receipt(file: UploadFile = File(...), sender: str = Form("web")) -> JSONResponse:
     if not file.filename:
         raise HTTPException(status_code=400, detail="missing filename")
 
-    upload_dir = Path("./data/receipts")
+    upload_dir = FilePath("./data/receipts")
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     file_path = upload_dir / file.filename
@@ -48,3 +53,9 @@ async def upload_receipt(file: UploadFile = File(...), sender: str = "web") -> J
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return JSONResponse(parsed)
+
+@app.delete("/receipts/{receipt_id}")
+def delete_receipt(receipt_id: int = Path(..., ge=1)) -> JSONResponse:
+    if storage.delete_receipt(receipt_id):
+        return JSONResponse({"status": "ok", "message": f"Receipt {receipt_id} deleted."})
+    raise HTTPException(status_code=404, detail=f"Receipt {receipt_id} not found.")

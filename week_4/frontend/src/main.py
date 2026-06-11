@@ -5,7 +5,7 @@ from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -35,8 +35,16 @@ async def proxy_list_receipts() -> list:
         response = await client.get(f"{BACKEND_URL}/receipts")
     return response.json()
 
+@app.delete("/api/receipts/all")
+async def proxy_delete_all_receipts() -> dict:
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.delete(f"{BACKEND_URL}/receipts/all")
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+    return response.json()
+
 @app.post("/api/receipts")
-async def proxy_receipt(file: UploadFile = File(...), sender: str = "web") -> dict:
+async def proxy_receipt(file: UploadFile = File(...), sender: str = Form("web")) -> dict:
     if not file.filename:
         raise HTTPException(status_code=400, detail="missing filename")
 
@@ -50,4 +58,12 @@ async def proxy_receipt(file: UploadFile = File(...), sender: str = "web") -> di
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
+    return response.json()
+
+@app.delete("/api/receipts/{receipt_id}")
+async def proxy_delete_receipt(receipt_id: int) -> dict:
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.delete(f"{BACKEND_URL}/receipts/{receipt_id}")
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
     return response.json()

@@ -282,6 +282,50 @@ h1 {
   display: none;
 }
 
+.table-actions {
+  text-align: right;
+  margin-top: 12px;
+}
+
+.btn-delete-all {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.btn-delete-all:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.receipts-table .action-cell {
+  text-align: right;
+  padding-right: 14px;
+}
+
+.btn-delete {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.btn-delete:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
 @keyframes slide-in {
   from {
     opacity: 0;

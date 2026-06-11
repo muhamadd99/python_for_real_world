@@ -4,6 +4,7 @@ const fileInput = document.getElementById("receipt-file");
 const senderInput = document.getElementById("sender");
 const resultBox = document.getElementById("result");
 const resultJson = document.getElementById("result-json");
+const deleteAllBtn = document.getElementById("delete-all-btn");
 
 const API_BASE = window.API_BASE || "";
 
@@ -60,14 +61,46 @@ function updateDropZone() {
 
 fileInput.addEventListener('change', updateDropZone);
 
+async function deleteReceipt(id) {
+  if (!confirm(`Delete receipt #${id}?`)) return;
+  try
+  {
+    const response = await fetch(`${API_BASE}/api/receipts/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("Delete failed");
+    loadReceipts();
+  } 
+  catch (e) 
+  {
+    alert(`Error: ${e.message}`);
+  }
+}
+
+async function deleteAllReceipts() {
+  if (!confirm("Delete ALL receipts? This cannot be undone.")) return;
+  try 
+  {
+    const response = await fetch(`${API_BASE}/api/receipts/all`, { method: "DELETE" });
+    if (!response.ok) throw new Error("Delete all failed");
+    loadReceipts();
+  } 
+  catch (e) 
+  {
+    alert(`Error: ${e.message}`);
+  }
+}
+
+deleteAllBtn.addEventListener("click", deleteAllReceipts);
+
 async function loadReceipts() {
   const tbody = document.getElementById("receipts-tbody");
-  try {
+  try 
+  {
     const response = await fetch(`${API_BASE}/api/receipts`);
     if (!response.ok) throw new Error("Failed to load");
     const receipts = await response.json();
-    if (!receipts.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="muted">No receipts yet.</td></tr>';
+    if (!receipts.length) 
+    {
+      tbody.innerHTML = '<tr><td colspan="9" class="muted">No receipts yet.</td></tr>';
       return;
     }
     tbody.innerHTML = receipts.map(r => `
@@ -80,11 +113,13 @@ async function loadReceipts() {
         <td>${r.receiver_name || "—"}</td>
         <td class="ref-cell">${r.reference_id || "—"}</td>
         <td>${r.transaction_date || "—"}</td>
-        <td>${r.bank_name || "—"}</td>
+        <td class="action-cell"><button class="btn-delete" onclick="deleteReceipt(${r.id})">Delete</button></td>
       </tr>
     `).join("");
-  } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="8" class="muted">Error loading receipts.</td></tr>';
+  } 
+  catch (e) 
+  {
+    tbody.innerHTML = '<tr><td colspan="9" class="muted">Error loading receipts.</td></tr>';
   }
 }
 
